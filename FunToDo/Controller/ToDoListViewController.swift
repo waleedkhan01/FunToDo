@@ -13,25 +13,22 @@ class ToDoListViewController: UITableViewController {
     //var items = ["Today", "Grocery List", "Reminders"]
     var items = [Item]()
     let defaults = UserDefaults.standard
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        var tmpItem = Item()
-        tmpItem.title = "Today"
         
-        var tmpItem2 = Item()
-        tmpItem2.title = "Grocery List"
-        var tmpItem3 = Item()
-        tmpItem3.title = "Reminders"
+        print(dataFilePath)
         
-        items.append(tmpItem)
-        items.append(tmpItem2)
-        items.append(tmpItem3)
         
-        if let storedItems = defaults.array(forKey: "ToDoListArray") as? [Item]{
-            items = storedItems
+        loadItems()
+        if(items == nil){
+            initializeItems()
         }
+//        if let storedItems = defaults.array(forKey: "ToDoListArray") as? [Item]{
+//            items = storedItems
+//        }
         
     }
     
@@ -56,6 +53,7 @@ class ToDoListViewController: UITableViewController {
         
         tableView.cellForRow(at: indexPath)?.accessoryType = currItem.complete ? .checkmark : .none
         
+        saveItems()
         
         tableView.deselectRow(at: indexPath, animated: true)
     }
@@ -71,9 +69,13 @@ class ToDoListViewController: UITableViewController {
             newItem.title = text.text!
             
             self.items.append(newItem)
+            
+            self.saveItems()
+            
+            
             print(newItem.title)
             print(self.items)
-            self.defaults.set(self.items, forKey: "ToDoListArray")
+//            self.defaults.set(self.items, forKey: "ToDoListArray")
             self.tableView.reloadData()
         }
         
@@ -83,6 +85,47 @@ class ToDoListViewController: UITableViewController {
         }
         alert.addAction(action)
         present(alert, animated: true, completion: nil)
+    }
+    
+    func saveItems(){
+        let encoder = PropertyListEncoder()
+        do{
+            
+            let data = try encoder.encode(self.items)
+            try data.write(to: self.dataFilePath!)
+            
+        }
+        catch{
+            print("Error encoding item array")
+        }
+        
+    }
+    
+    func loadItems(){
+        if let data = try? Data(contentsOf: dataFilePath!){
+            let decoder = PropertyListDecoder()
+            do{
+                items = try decoder.decode([Item].self, from: data)
+            }
+            catch{
+                print("Error occured loading items")
+            }
+        }
+        
+        
+    }
+    func initializeItems(){
+        var tmpItem = Item()
+        tmpItem.title = "Today"
+
+        var tmpItem2 = Item()
+        tmpItem2.title = "Grocery List"
+        var tmpItem3 = Item()
+        tmpItem3.title = "Reminders"
+
+        items.append(tmpItem)
+        items.append(tmpItem2)
+        items.append(tmpItem3)
     }
     
 }
